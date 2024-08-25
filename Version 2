@@ -1,0 +1,166 @@
+import tkinter as tk
+from tkinter import ttk
+import random
+import fractions
+import os
+from tkinter import messagebox
+
+class MathQuiz:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Math Quiz")
+        self.root.geometry("400x350")
+        self.root.configure(bg="#282C34")  # Set background color for the window
+
+        self.score = 0
+        self.question_count = 0
+        self.questions = []
+        self.score_file = "scores.txt"  # File to save scores
+        
+        self.create_welcome_screen()
+
+    def create_welcome_screen(self):
+        self.clear_window()
+
+        title_label = ttk.Label(self.root, text="Math Quiz", font=("Helvetica", 18), background="#282C34", foreground="#61DAFB")
+        title_label.pack(pady=20)
+
+        fraction_button = ttk.Button(self.root, text="Fraction", command=lambda: self.start_quiz('Fraction'))
+        fraction_button.pack(pady=10)
+
+        decimal_button = ttk.Button(self.root, text="Decimal", command=lambda: self.start_quiz('Decimal'))
+        decimal_button.pack(pady=10)
+
+        percentage_button = ttk.Button(self.root, text="Percentage", command=lambda: self.start_quiz('Percentage'))
+        percentage_button.pack(pady=10)
+
+        view_scores_button = ttk.Button(self.root, text="View Scores", command=self.view_scores)
+        view_scores_button.pack(pady=10)
+
+    def start_quiz(self, level):
+        self.level = level
+        self.score = 0
+        self.question_count = 0
+        self.questions = self.generate_questions()
+        self.show_question()
+
+    def generate_questions(self):
+        questions = []
+        for _ in range(5):
+            numerator = random.randint(1, 20)
+            denominator = random.randint(1, 20)
+            if denominator == 0:
+                denominator = 1  # To avoid division by zero
+
+            if self.level == 'Fraction':
+                questions.append((numerator, denominator, fractions.Fraction(numerator, denominator).limit_denominator()))
+            elif self.level == 'Decimal':
+                questions.append((numerator, denominator, round(numerator / denominator, 2)))
+            elif self.level == 'Percentage':
+                questions.append((numerator, denominator, round((numerator / denominator) * 100, 1)))
+        return questions
+
+    def show_question(self):
+        if self.question_count < len(self.questions):
+            self.clear_window()
+            numerator, denominator, _ = self.questions[self.question_count]
+
+            if self.level == 'Fraction':
+                question_text = f"Simplify the fraction: {numerator}/{denominator}"
+            elif self.level == 'Decimal':
+                question_text = f"Convert to a decimal: {numerator}/{denominator}"
+            elif self.level == 'Percentage':
+                question_text = f"Convert to a percentage: {numerator}/{denominator}"
+
+            question_label = ttk.Label(self.root, text=question_text, font=("Helvetica", 14), background="#282C34", foreground="#98C379")
+            question_label.pack(pady=10)
+
+            self.answer_var = tk.StringVar()
+            answer_entry = ttk.Entry(self.root, textvariable=self.answer_var, font=("Helvetica", 12))
+            answer_entry.pack(pady=5)
+
+            submit_button = ttk.Button(self.root, text="Submit", command=self.check_answer)
+            submit_button.pack(pady=10)
+        else:
+            self.show_score()
+
+    def check_answer(self):
+        if not self.answer_var.get().strip():  # Check if the input is empty
+            messagebox.showerror("Error", "Answer cannot be empty!")
+            return
+
+        numerator, denominator, correct_answer = self.questions[self.question_count]
+        user_answer = self.answer_var.get().strip()
+
+        # For fractions, compare the user's input directly with the correct fraction
+        if self.level == 'Fraction':
+            user_answer = fractions.Fraction(user_answer)
+
+        # For decimals, handle cases with or without leading zeros and round the result
+        elif self.level == 'Decimal':
+            try:
+                user_answer = round(float(user_answer), 2)
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid decimal number.")
+                return
+
+        # For percentages, ensure the input ends with '%' and compare the numeric value
+        elif self.level == 'Percentage':
+            try:
+                if user_answer.endswith('%'):
+                    user_answer = round(float(user_answer[:-1]), 1)
+                else:
+                    messagebox.showerror("Error", "Please include the '%' symbol in your answer.")
+                    return
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid percentage.")
+                return
+
+        if user_answer == correct_answer:
+            self.score += 1
+
+        self.question_count += 1
+        self.show_question()
+
+    def show_score(self):
+        self.clear_window()
+
+        result_label = ttk.Label(self.root, text=f"Your score: {self.score}/5", font=("Helvetica", 16), background="#282C34", foreground="#E06C75")
+        result_label.pack(pady=20)
+
+        self.save_score()
+
+        back_button = ttk.Button(self.root, text="Back to Menu", command=self.create_welcome_screen)
+        back_button.pack(pady=10)
+
+    def save_score(self):
+        with open(self.score_file, "a") as file:
+            file.write(f"{self.level}: {self.score}/5\n")
+
+    def view_scores(self):
+        self.clear_window()
+
+        if os.path.exists(self.score_file):
+            with open(self.score_file, "r") as file:
+                scores = file.readlines()
+        else:
+            scores = ["No scores recorded yet."]
+
+        score_label = ttk.Label(self.root, text="Previous Scores:", font=("Helvetica", 18), background="#282C34", foreground="#61DAFB")
+        score_label.pack(pady=20)
+
+        for score in scores:
+            score_entry = ttk.Label(self.root, text=score.strip(), font=("Helvetica", 14), background="#282C34", foreground="#98C379")
+            score_entry.pack(pady=2)
+
+        back_button = ttk.Button(self.root, text="Back to Menu", command=self.create_welcome_screen)
+        back_button.pack(pady=10)
+
+    def clear_window(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    quiz = MathQuiz(root)
+    root.mainloop()
