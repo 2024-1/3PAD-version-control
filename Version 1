@@ -1,0 +1,366 @@
+# THIS program is created by Saheb Singh.
+# DATE created : 26/07/2024.
+# THIS program provides students of any age an opportunity to improve their mathematic conversions through a boss battle theme.
+# EACH level represents the conversion between either fractions, decimals, or percentages, which will be chosen by the user to defeat the boss.
+###############################################################################################################################################
+import tkinter as tk
+from tkinter import ttk
+import random
+import fractions
+import os
+from tkinter import messagebox
+
+class Boss: # CLASS to store boss attributes.
+    def __init__(self, name, hp):
+        self.name = name # SET boss name.
+        self.hp = hp # SET boss hp.
+        self.initial_hp = hp # STORE initial boss hp.
+
+    def take_damage(self, damage):
+        self.hp -= damage # REDUCE boss hp by the damage taken.
+
+    def is_defeated(self):
+        return self.hp <= 0 # CHECK if boss hp is at 0 or less.
+
+    def get_hp_percentage(self):
+        return (self.hp / self.initial_hp) * 100 # CALCULATE hp as a percentage of initial hp.
+    
+class MathGame: # CLASS to store game attributes.
+    def __init__(self, root):
+        self.root = root # STORE the root window.
+        self.root.title("Math Triad") # SET the title for the app.
+        self.root.config(bg="#FFFF8F") # SET the background for the app.
+        self.root.geometry("650x650")# SET the size for the app.
+        
+        self.image = tk.PhotoImage(file="consort.gif") # SET the image via it's image path. 
+        self.image = self.image.zoom(5) # ADJUST the image dimensions.
+        self.image = self.image.subsample(18) 
+        self.image2 = tk.PhotoImage(file="fog.png") # SET the image via it's image path.
+        self.image2 = self.image2.zoom(1) # ADJUST the image dimensions.
+        self.image2 = self.image2.subsample(10)
+        self.image3 = tk.PhotoImage(file="defeated.gif") # SET the image via it's image path.
+        self.image3 = self.image3.zoom(10) # ADJUST the image dimensions.
+        self.image3 = self.image3.subsample(28)
+        
+        self.QUESTION_COUNT = 0 # INITIALISE question count.
+        self.SCORE = 0 # INITIALISE score.
+        self.incorrect_questions = [] # INITIALISE list for incorrect questions.
+        self.boss = None # INITIALISE boss.
+        self.score_file = "scores.txt" # SET text files to store score.
+        self.user_data_file = "user_data.txt" # SET text file to store user data.
+        self.user_name = "" # INITIALISE user name.
+        self.birth_date = "" # INITIALISE date of birth.
+        if os.path.exists(self.user_data_file): # LOAD the user data if it exists. 
+            with open(self.user_data_file, "r") as file:
+                data = file.read().splitlines()
+                if len(data) == 2:
+                    self.user_name, self.birth_date = data
+                    self.create_welcome_screen()
+                else:
+                    self.create_login_screen()
+        else:
+            self.create_login_screen()
+
+    def create_login_screen(self):
+        self.clear_window()# CLEAR the window.
+        
+        title_label = ttk.Label(self.root, text="Login", font=("Rockwell", 24, "bold underline"), foreground="#00C300", background="#FFFF8F") # TITLE for login screen.
+        title_label.pack(pady=20)
+        
+        name_label = ttk.Label(self.root, text="Name:", font=("Helvetica", 12, "bold underline"), foreground="#00B2C3", background="#FFFF8F") # LABEL for name.
+        name_label.pack(pady=5)
+        
+        self.name_var = tk.StringVar() # VARIABLE to store user name.
+        name_entry = ttk.Entry(self.root, textvariable=self.name_var, font=("Helvetica", 12)) # ENTRY field for name.
+        name_entry.pack(pady=5)
+ 
+        def validate_name(new_name): # VALIDATION for name.
+            if new_name == "": # ENSURE that user can backspace and the field can be empty during the input.
+                return True
+            if not new_name.isalpha(): # ENSURE that an error appears if the name does not contain only letters from the alphabet.
+                messagebox.showerror("Error", "Invalid Input. Name must contain only letters.")
+                return False
+            if len(new_name) > 20 : # ENSURE that an error appears if the amount of characters exceeds 20.
+                messagebox.showerror("Maximum Limit", "Maximum Limit Reached. Please ensure that your input has less than 20 characters.")
+                return False
+            return True
+            
+        vcmd = (self.root.register(validate_name), '%P')
+        name_entry.config(validate="key", validatecommand=vcmd)
+        
+        birth_date_label = ttk.Label(self.root, text="Date of Birth:", font=("Helvetica", 12, "bold underline"), foreground="#00B2C3", background="#FFFF8F") # LABEL for date of birth.
+        birth_date_label.pack(pady=5)
+        
+        day_var = tk.StringVar() # VARIABLE to store day of birth.
+        day_combobox = ttk.Combobox(self.root, textvariable=day_var, font=("Helvetica", 12), state="readonly") # COMBOBOX for day of birth.
+        day_combobox['values'] = [str(i) for i in range(1, 32)] # RANGE of days between 1-31.
+        day_combobox.pack(pady=5)
+        
+        month_var = tk.StringVar() # VARIABLE to store month of birth.
+        month_combobox = ttk.Combobox(self.root, textvariable=month_var, font=("Helvetica", 12), state="readonly")
+        month_combobox['values'] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] # LIST including months of the year.
+        month_combobox.pack(pady=5)
+        
+        year_var = tk.StringVar() # VARIABLE to store year of birth.
+        year_combobox = ttk.Combobox(self.root, textvariable=year_var, font=("Helvetica", 12), state="readonly")
+        year_combobox['values'] = [str(i) for i in range(2000, 2011)] # RANGE of years between 2000-2011.
+        year_combobox.pack(pady=5)
+        
+        login_button = tk.Button(self.root, text="Submit", command=lambda: self.save_login(day_var.get(), month_var.get(), year_var.get())) # BUTTON for login.
+        login_button.pack(pady=10)
+        self.image2_label = ttk.Label(self.root, image=self.image2) # LABEL for image.
+        self.image2_label.pack()
+        def validate_login_fields(): # VALIDATION to ensure all fields are filled.
+            if not self.name_var.get() or not day_var.get() or not month_var.get() or not year_var.get():
+                tk.messagebox.showerror("Error", "All fields must be filled!")
+                return False
+            if len(self.name_var.get()) < 3 : # VALIDATION to ensure that the name isn't submitted with less than 3 characters.
+                messagebox.showerror("Minimum Limit", "Minimum Limit. Please ensure that your input is more than 3 characters.")
+                return False
+            return True
+        login_button.config(command=lambda: self.save_login(day_var.get(), month_var.get(), year_var.get()) if validate_login_fields() else None)
+        
+    def save_login(self, day, month, year):
+        self.user_name = self.name_var.get() # SAVE the user name.
+        self.birth_date = f"{day} {month} {year}" # SAVE the date of birth in appropriate format.
+        with open(self.user_data_file, "w") as file: # WRITE the user data to a text file
+            file.write(self.user_name + "\n")
+            file.write(self.birth_date + "\n")
+        self.create_welcome_screen() # CREATE welcome screen.
+        
+    def create_welcome_screen(self):
+        self.clear_window() # CLEAR the window.
+        if os.path.exists(self.user_data_file): # DISPLAY the user information from the text file.
+            with open(self.user_data_file, "r") as file:
+                user_info = file.read()
+
+        user_info_label = ttk.Label(self.root, text=user_info, font=("Rockwell", 15), background="#FFFF8F", foreground="black", anchor="w") # LABEL for user information.
+        user_info_label.place(relx=0, rely=1, anchor="sw")
+        title_label = ttk.Label(self.root, text="Math Triad : Showdown", font=("Rockwell", 24, "bold underline"), foreground="#00C300", background="#FFFF8F") # LABEL for title.
+        title_label.pack(pady=20)
+        brief_label = ttk.Label(self.root, text="Choose your weapon and defeat the boss!!!", font=("Rockwell", 14, "bold underline"), foreground="#00B2C3", background="#FFFF8F") # LABEL for the brief.
+        brief_label.pack(pady=10)
+
+        button_frame = ttk.Frame(self.root, style='Button.TFrame') # FRAME for the challenge buttons.
+        button_frame.pack(pady=10)
+        fraction_button = ttk.Button(button_frame, text="Fractions", command=lambda: self.start_quiz('Fraction')) # BUTTON for fractions.
+        fraction_button.pack(side=tk.LEFT, padx=10, pady=10)
+        decimal_button = ttk.Button(button_frame, text="Decimals", command=lambda: self.start_quiz('Decimal')) # BUTTON for decimals.
+        decimal_button.pack(side=tk.LEFT, padx=10, pady=10)
+        percentage_button = ttk.Button(button_frame, text="Percentages", command=lambda: self.start_quiz('Percentage')) # BUTTON for percentages.
+        percentage_button.pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.image_label = ttk.Label(self.root, image=self.image) # LABEL to display image.
+        self.image_label.pack()
+
+        view_scores_frame = ttk.Frame(self.root) # FRAME for the button to view score.
+        view_scores_frame.pack(pady=10)
+        view_scores_button = ttk.Button(view_scores_frame, text="View Scores", command=self.view_scores) # BUTTON to view score.
+        view_scores_button.pack()
+        
+        logout_button = ttk.Button(self.root, text="Logout", command=self.logout) # BUTTON for logout.
+        logout_button.pack(side=tk.BOTTOM, anchor="se", padx=10, pady=10)
+
+        style = ttk.Style() # STYLE for button frame.
+        style.configure('Button.TFrame', background='#00B2C3')
+
+    def logout(self):
+        if os.path.exists(self.user_data_file): # REMOVE the login information from text file.
+            os.remove(self.user_data_file)
+        self.create_login_screen() # CREATE login screen.
+
+
+    def start_quiz(self, level):
+        self.level = level # STORE the selected level.
+        self.QUESTION_COUNT = 0 # RESET question count.
+        self.SCORE = 0 # RESET score.
+        self.incorrect_questions = [] # RESET list of incorrect questions.
+        self.boss = Boss(name="Boss", hp=5) # INITIALISE boss with an hp of 5.
+        self.questions = self.generate_questions(level) # GENERATE level appropriate questions.
+        self.show_question() # DISPLAY the question.
+
+    def generate_questions(self, level):
+        questions = [] # LIST for questions.
+        for _ in range(5): # GENERATE 5 questions per level.
+            if level == 'Fraction':
+                numerator = random.randint(1, 5) # SET numerators.
+                denominator = random.choice([2, 4, 5, 10]) # SET denominators.
+                common_factor = random.randint(1, 2) # SET common factor between numerator and denominator.
+                display_numerator = numerator * common_factor # DISPLAY numerator calculation.
+                display_denominator = denominator * common_factor # DISPLAY denominator calculation.
+                simplified_fraction = fractions.Fraction(display_numerator, display_denominator).limit_denominator() # SET simplified fraction.
+                answer = str(simplified_fraction) # SET simplified fraction as the answer.
+                questions.append((display_denominator, display_numerator, answer))
+            elif level == 'Decimal':
+                total = random.choice([10, 20, 100]) # SET total for decimal.
+                portion = random.randint(1, total - 1) # SET the portion for decimal.
+                answer = f"{portion / total:.1f}" # SET the answer as portion/total.
+                questions.append((total, portion, answer))
+            elif level == 'Percentage':
+                total = random.choice([10, 20, 100]) # SET total for percentage.
+                portion = random.randint(1, total - 1) # SET portion for percentage.
+                answer = f"{(portion / total) * 100:.1f}%" # SET answer as (portion/total) x 100.
+                questions.append((total, portion, answer))
+        return questions
+
+    def show_question(self):
+        if self.QUESTION_COUNT < len(self.questions): # CHECK if there's more questions to show.
+            self.clear_window() # CLEAR window to set up next question.
+            total, portion, _ = self.questions[self.QUESTION_COUNT] # GET the question's details.
+                
+            self.hint_label = ttk.Label(self.root, text="", font=("Helvetica", 10, "bold"), foreground="#00B2C3", background="#FFFF8F") # LABEL to display hint.
+            self.hint_label.pack(pady=5)
+            self.hint_label.pack_forget()
+
+            if self.level == 'Fraction': # SET instruction and hint for fraction.
+                instruction_text = "Simplify the fraction if possible."
+                self.hint = f"Tip: {portion}/{total} can be simplified if the numerator and denominator have common factors. Example: 2/4 = 1/2."
+            elif self.level == 'Decimal': # SET instruction and hint for decimal.
+                instruction_text = "Convert to a decimal. Use one decimal place."
+                self.hint = f"Tip: Divide {portion} by {total}. Example: 1/2 = 0.5."
+            elif self.level == 'Percentage': # SET instruction and hint for percentage.
+                instruction_text = "Convert to a percentage. Use one decimal place."
+                self.hint = f"Tip: Divide {portion} by {total} and multiply by 100. Example: 1/2 = 50%."
+
+            question_label = ttk.Label(self.root, text=f"What is {portion} out of {total} as a {self.level.lower()}?", font=("Helvetica", 14,"bold"), foreground="#F30001", background="#FFFF8F")  # LABEL to display question.
+            question_label.pack(pady=10)
+            instruction_label = ttk.Label(self.root, text=instruction_text, font=("Helvetica", 12, "bold"), foreground="#00B2C3", background="#FFFF8F") # LABEL to display instruction.
+            instruction_label.pack(pady=5)
+
+            self.hint_text = self.hint # STORE the hint.
+
+            self.answer_var = tk.StringVar() # VARIABLE to store answer.
+            answer_entry = ttk.Entry(self.root, textvariable=self.answer_var, font=("Helvetica", 12)) # ENTRY field for answer.
+            answer_entry.pack(pady=5)
+     
+            def validate_answer(new_value): # VALIDATION to only allow certain characters depending on the level chosen.
+                if self.level == 'Fraction':
+                    allowed_chars = "0123456789/"
+                elif self.level == 'Decimal':
+                    allowed_chars = "0123456789."
+                elif self.level == 'Percentage':
+                    allowed_chars = "0123456789.%"
+                if all(char in allowed_chars for char in new_value):
+                    return True
+                else: # SHOW error message if the answer isn't in the corect format.
+                    messagebox.showerror("Invalid Input", "Please write your answer in the appropriate format")
+                    return False
+                return True
+            
+
+            vcmd_answer = (self.root.register(validate_answer), '%P')
+            answer_entry.config(validate="key", validatecommand=vcmd_answer)
+    
+            submit_button = ttk.Button(self.root, text="Submit", command=self.check_answer) # BUTTON to submit answer.
+            submit_button.pack(pady=10)
+
+            def validate_answer_field(): # VALIDATION to ensure answer field isn't empty.
+                if not self.answer_var.get():
+                    tk.messagebox.showerror("Error", "Answer cannot be empty!")
+                    return False
+                return True
+            
+            submit_button.config(command=lambda: self.check_answer() if validate_answer_field() else None) # ENSURE submit button command also includes answer field validation.
+            submit_button.pack(pady=10)
+            
+            boss_hp_label = ttk.Label(self.root, text=f"BOSS", font=("Helvetica", 16, "bold underline"), foreground="#F30001", background="#FFFF8F") # DISPLAY boss hp.
+            boss_hp_label.pack(pady=5)
+            self.image_label = ttk.Label(self.root, image=self.image) # DISPLAY boss image.
+            self.image_label.pack()
+            self.hp_bar = ttk.Progressbar(self.root, orient="horizontal", length=200, mode="determinate") # CREATE a HP bar to show hp depletion.
+            self.hp_bar.pack(pady=5)
+            self.hp_bar["value"] = self.boss.get_hp_percentage()
+
+            menu_button = ttk.Button(self.root, text="Return to Menu", command=self.create_welcome_screen)
+            menu_button.pack(side=tk.BOTTOM, anchor="se", padx=10, pady=10)
+                 
+            hint_button = ttk.Button(self.root, text="Show Hint", command=self.show_hint) # BUTTON to reveal hint.  
+            hint_button.pack(pady=10)
+        else:
+            self.show_score()
+         
+    def show_hint(self): 
+        self.hint_label.config(text=self.hint_text) # DISPLAY hint text in the hint label.
+        self.hint_label.pack(pady=5)
+     
+    def check_answer(self):
+        total, portion, correct_answer = self.questions[self.QUESTION_COUNT] 
+        user_answer = self.answer_var.get().strip()
+        if self.level == 'Fraction': # FORMAT the answer depending on the level.
+            user_answer = user_answer.replace(' ', '')
+        elif self.level == 'Percentage':
+            user_answer = user_answer if user_answer.endswith('%') else f"{user_answer}%"
+        if user_answer == correct_answer: # COMPARE user answer to correct answer.
+            self.SCORE += 1 # INCREASE score and reduce hp if answer is correct.
+            self.boss.take_damage(1)
+        else:
+            self.incorrect_questions.append((total, portion, correct_answer)) # STORE question to review after quiz if answer is incorrect.
+        self.QUESTION_COUNT += 1 # CHANGE to next question.
+        self.show_question()
+
+    def show_score(self):
+        self.clear_window() # CLEAR the window.
+        if self.boss.is_defeated(): # CHECK if boss is defeated.
+            result_text = "Congratulations! You defeated the boss!" # SHOW text if boss is defeated.
+        else:
+            result_text = "Oh no! The boss is still standing!" # SHOW text if boss is still standing.
+        result_label = ttk.Label(self.root, text=result_text, font=("Helvetica", 18, "bold"), foreground="#F30001", background="#FFFF8F") # DISPLAY results.
+        result_label.pack(pady=20)
+        score_label = ttk.Label(self.root, text=f"Your score: {self.SCORE}/{len(self.questions)}", font=("Helvetica", 16, "bold"), foreground="#00B2C3", background="#FFFF8F") # DISPLAY user score.
+        score_label.pack(pady=10)
+        if self.incorrect_questions: # IF there are incorrect questions, display on screen.
+            incorrect_label = ttk.Label(self.root, text="Incorrect Answers:", font=("Helvetica", 14, "bold underline"), foreground="#F30001", background="#FFFF8F")
+            incorrect_label.pack(pady=10)
+            for total, portion, correct_answer in self.incorrect_questions: # ADD correct answer besides each incorrect answer displayed on screen.
+                question_text = f"{portion} out of {total} as a {self.level.lower()}"
+                answer_text = f"Correct Answer: {correct_answer}"
+                incorrect_question_label = ttk.Label(self.root, text=f"{question_text} -> {answer_text}", font=("Helvetica", 12, "bold"), foreground="#F30001", background="#FFFF8F") # LABEL for incorrect questions.
+                incorrect_question_label.pack(pady=2)
+        if self.boss.is_defeated(): # DISPLAY image if boss is defeated.
+            self.image3_label = ttk.Label(self.root, image=self.image3)
+            self.image3_label.pack()
+        else: # DISPLAY image if boss is standing.
+            self.image_label = ttk.Label(self.root, image=self.image)
+            self.image_label.pack()
+            
+        self.save_score() # SAVE user score.
+        back_button = ttk.Button(self.root, text="Return to Menu", command=self.create_welcome_screen) # BUTTON to return to welcome screen.
+        back_button.pack(pady=10)
+
+    def save_score(self):
+        with open(self.score_file, "a") as file: # SAVE level and score to a text file.
+            file.write(f"{self.level}: {self.SCORE}/{len(self.questions)}\n")
+
+    def view_scores(self):
+        self.clear_window() # CLEAR the window.
+        if os.path.exists(self.score_file): # CHECK and read score from score file.
+            with open(self.score_file, "r") as file:
+                scores = file.readlines()        
+        else: # IF no scores are available.
+            scores = ["No scores recorded yet."]
+
+        score_label = ttk.Label(self.root, text="Previous Scores:", font=("Helvetica", 18, "bold underline"), foreground="#00C300", background="#FFFF8F") # DISPLAY label for previous scores.
+        score_label.pack(pady=20)
+        for score in scores: # DISPLAY each score.
+            score_entry = ttk.Label(self.root, text=score.strip(), font=("Helvetica", 14, "bold"), foreground="#F30001", background="#FFFF8F")
+            score_entry.pack(pady=2)
+
+        clear_button = ttk.Button(self.root, text="Clear Scores", command=self.clear_scores) # BUTTON to clear scores.
+        clear_button.pack(pady=10)
+        back_button = ttk.Button(self.root, text="Back to Menu", command=self.create_welcome_screen) # BUTTON to return to welcome screen.
+        back_button.pack(pady=10)
+
+    def clear_scores(self):
+        if os.path.exists(self.score_file): # CHECK if the text file for score exists and clear it.
+            os.remove(self.score_file)
+            self.view_scores()  
+
+    def clear_window(self):
+        for widget in self.root.winfo_children(): # CLEAR the window.
+            widget.destroy()
+
+
+if __name__ == "__main__":
+    root = tk.Tk() # MAIN application window.
+    game = MathGame(root) # INITIALISE class for MathGame with the window.
+    root.mainloop() # GUI event loop.
