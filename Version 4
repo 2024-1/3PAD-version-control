@@ -3,7 +3,7 @@ from tkinter import ttk
 import random
 from tkinter import messagebox
 
-class MathQuiz:
+class Mathgame:
     def __init__(self, root):
         self.root = root
         self.root.title("Math Quiz")
@@ -97,5 +97,5 @@ class MathQuiz:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    quiz = MathQuiz(root)
+    quiz = Mathgame(root)
     root.mainloop()
