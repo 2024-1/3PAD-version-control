@@ -11,21 +11,29 @@ import os
 from tkinter import messagebox
 
 class Boss: # CLASS to store boss attributes.
+
+    
     def __init__(self, name, hp):
         self.name = name # SET boss name.
         self.hp = hp # SET boss hp.
         self.initial_hp = hp # STORE initial boss hp.
 
+
     def take_damage(self, damage):
         self.hp -= damage # REDUCE boss hp by the damage taken.
+
 
     def is_defeated(self):
         return self.hp <= 0 # CHECK if boss hp is at 0 or less.
 
+
     def get_hp_percentage(self):
         return (self.hp / self.initial_hp) * 100 # CALCULATE hp as a percentage of initial hp.
+
     
 class MathGame: # CLASS to store game attributes.
+
+    
     def __init__(self, root):
         self.root = root # STORE the root window.
         self.root.title("Math Triad") # SET the title for the app.
@@ -61,6 +69,7 @@ class MathGame: # CLASS to store game attributes.
         else:
             self.create_login_screen()
 
+
     def create_login_screen(self):
         self.clear_window()# CLEAR the window.
         
@@ -73,6 +82,7 @@ class MathGame: # CLASS to store game attributes.
         self.name_var = tk.StringVar() # VARIABLE to store user name.
         name_entry = ttk.Entry(self.root, textvariable=self.name_var, font=("Helvetica", 12)) # ENTRY field for name.
         name_entry.pack(pady=5)
+
  
         def validate_name(new_name): # VALIDATION for name.
             if new_name == "": # ENSURE that user can backspace and the field can be empty during the input.
@@ -110,6 +120,8 @@ class MathGame: # CLASS to store game attributes.
         login_button.pack(pady=10)
         self.image2_label = ttk.Label(self.root, image=self.image2) # LABEL for image.
         self.image2_label.pack()
+
+        
         def validate_login_fields(): # VALIDATION to ensure all fields are filled.
             if not self.name_var.get() or not day_var.get() or not month_var.get() or not year_var.get():
                 tk.messagebox.showerror("Error", "All fields must be filled!")
@@ -119,6 +131,7 @@ class MathGame: # CLASS to store game attributes.
                 return False
             return True
         login_button.config(command=lambda: self.save_login(day_var.get(), month_var.get(), year_var.get()) if validate_login_fields() else None)
+
         
     def save_login(self, day, month, year):
         self.user_name = self.name_var.get() # SAVE the user name.
@@ -127,6 +140,7 @@ class MathGame: # CLASS to store game attributes.
             file.write(self.user_name + "\n")
             file.write(self.birth_date + "\n")
         self.create_welcome_screen() # CREATE welcome screen.
+
         
     def create_welcome_screen(self):
         self.clear_window() # CLEAR the window.
@@ -164,11 +178,12 @@ class MathGame: # CLASS to store game attributes.
         style = ttk.Style() # STYLE for button frame.
         style.configure('Button.TFrame', background='#00B2C3')
 
+
     def logout(self):
         if os.path.exists(self.user_data_file): # REMOVE the login information from text file.
             os.remove(self.user_data_file)
         self.create_login_screen() # CREATE login screen.
-
+        
 
     def start_quiz(self, level):
         self.level = level # STORE the selected level.
@@ -178,6 +193,7 @@ class MathGame: # CLASS to store game attributes.
         self.boss = Boss(name="Boss", hp=5) # INITIALISE boss with an hp of 5.
         self.questions = self.generate_questions(level) # GENERATE level appropriate questions.
         self.show_question() # DISPLAY the question.
+
 
     def generate_questions(self, level):
         questions = [] # LIST for questions.
@@ -202,6 +218,7 @@ class MathGame: # CLASS to store game attributes.
                 answer = f"{(portion / total) * 100:.1f}%" # SET answer as (portion/total) x 100.
                 questions.append((total, portion, answer))
         return questions
+
 
     def show_question(self):
         if self.QUESTION_COUNT < len(self.questions): # CHECK if there's more questions to show.
@@ -232,6 +249,7 @@ class MathGame: # CLASS to store game attributes.
             self.answer_var = tk.StringVar() # VARIABLE to store answer.
             answer_entry = ttk.Entry(self.root, textvariable=self.answer_var, font=("Helvetica", 12)) # ENTRY field for answer.
             answer_entry.pack(pady=5)
+
      
             def validate_answer(new_value): # VALIDATION to only allow certain characters depending on the level chosen.
                 if self.level == 'Fraction':
@@ -253,6 +271,7 @@ class MathGame: # CLASS to store game attributes.
     
             submit_button = ttk.Button(self.root, text="Submit", command=self.check_answer) # BUTTON to submit answer.
             submit_button.pack(pady=10)
+
 
             def validate_answer_field(): # VALIDATION to ensure answer field isn't empty.
                 if not self.answer_var.get():
@@ -278,10 +297,12 @@ class MathGame: # CLASS to store game attributes.
             hint_button.pack(pady=10)
         else:
             self.show_score()
+
          
     def show_hint(self): 
         self.hint_label.config(text=self.hint_text) # DISPLAY hint text in the hint label.
         self.hint_label.pack(pady=5)
+
      
     def check_answer(self):
         total, portion, correct_answer = self.questions[self.QUESTION_COUNT] 
@@ -297,6 +318,7 @@ class MathGame: # CLASS to store game attributes.
             self.incorrect_questions.append((total, portion, correct_answer)) # STORE question to review after quiz if answer is incorrect.
         self.QUESTION_COUNT += 1 # CHANGE to next question.
         self.show_question()
+
 
     def show_score(self):
         self.clear_window() # CLEAR the window.
@@ -327,9 +349,11 @@ class MathGame: # CLASS to store game attributes.
         back_button = ttk.Button(self.root, text="Return to Menu", command=self.create_welcome_screen) # BUTTON to return to welcome screen.
         back_button.pack(pady=10)
 
+
     def save_score(self):
         with open(self.score_file, "a") as file: # SAVE level and score to a text file.
             file.write(f"{self.level}: {self.SCORE}/{len(self.questions)}\n")
+
 
     def view_scores(self):
         self.clear_window() # CLEAR the window.
@@ -350,10 +374,12 @@ class MathGame: # CLASS to store game attributes.
         back_button = ttk.Button(self.root, text="Back to Menu", command=self.create_welcome_screen) # BUTTON to return to welcome screen.
         back_button.pack(pady=10)
 
+
     def clear_scores(self):
         if os.path.exists(self.score_file): # CHECK if the text file for score exists and clear it.
             os.remove(self.score_file)
             self.view_scores()  
+
 
     def clear_window(self):
         for widget in self.root.winfo_children(): # CLEAR the window.
